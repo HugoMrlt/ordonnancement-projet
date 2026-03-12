@@ -1,0 +1,156 @@
+\section{Heuristiques de résolution (Open Shop)}
+
+Dans un problème d'ordonnancement de type \textit{Open Shop}, l'ordre de passage des opérations pour un job donné n'est pas imposé. Cette flexibilité permet d'optimiser le placement des tâches en utilisant différentes heuristiques.
+
+\subsection{Données du problème et Borne Inférieure}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Jobs} & \textbf{Machine 1 ($M_1$)} & \textbf{Machine 2 ($M_2$)} & \textbf{Machine 3 ($M_3$)} & \textbf{Échéance ($D_j$)} \\
+\midrule
+\textbf{Job 1} & 3 & 2 & 1 & 6 \\
+\textbf{Job 2} & 1 & 4 & 2 & 8 \\
+\textbf{Job 3} & 2 & 1 & 5 & 5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Nous évaluons d'abord la borne inférieure du temps d'achèvement maximal ($C_{max}$).
+\begin{itemize}
+    \item Charges des machines : $L_1 = 6$, $L_2 = 7$, $L_3 = 8$
+    \item Durées totales des jobs : $P_1 = 6$, $P_2 = 7$, $P_3 = 8$
+\end{itemize}
+La borne inférieure est $\max(8, 8) = 8$. Tout ordonnancement terminant à $t=8$ est strictement optimal.
+
+\subsection{Déroulement et Schémas des heuristiques}
+
+\textit{Légende des couleurs : \textcolor{blue}{Job 1}, \textcolor{red}{Job 2}, \textcolor{green!70!black}{Job 3}.}
+
+\subsubsection{Heuristique SPT (Shortest Processing Time)}
+\textbf{Principe :} Priorité aux opérations dont la durée de traitement est la plus courte.
+\paragraph{Déroulement :} À $t=0$, on lance les opérations de durée 1. À $t=1$, les machines se libèrent, on lance les opérations de durée 2. À $t=3$, on place les tâches restantes les plus longues.
+
+\begin{figure}[h]
+\centering
+\begin{ganttchart}[
+    vgrid, hgrid,
+    x unit=1.2cm, y unit chart=0.7cm,
+    bar/.append style={draw=black, line width=1pt}
+]{1}{8}
+\gantttitle{Temps}{8} \\
+\gantttitlelist{1,...,8}{1} \\
+\ganttbar{Machine 1}{1}{1} % J2
+\ganttbar[bar/.style={fill=red!40}]{J2}{1}{1}
+\ganttbar[bar/.style={fill=green!40}]{J3}{2}{3}
+\ganttbar[bar/.style={fill=blue!40}]{J1}{4}{6} \\
+\ganttbar{Machine 2}{1}{1} % J3
+\ganttbar[bar/.style={fill=green!40}]{J3}{1}{1}
+\ganttbar[bar/.style={fill=blue!40}]{J1}{2}{3}
+\ganttbar[bar/.style={fill=red!40}]{J2}{4}{7} \\
+\ganttbar{Machine 3}{1}{1} % J1
+\ganttbar[bar/.style={fill=blue!40}]{J1}{1}{1}
+\ganttbar[bar/.style={fill=red!40}]{J2}{2}{3}
+\ganttbar[bar/.style={fill=green!40}]{J3}{4}{8}
+\end{ganttchart}
+\caption{Diagramme de Gantt - Heuristique SPT ($C_{max} = 8$)}
+\end{figure}
+
+\subsubsection{Heuristique EDD (Earliest Due Date)}
+\textbf{Principe :} Priorité aux jobs ayant la date d'échéance la plus proche ($D_3 < D_1 < D_2$).
+\paragraph{Déroulement :} On place le Job 3 en priorité, puis le Job 1, puis le Job 2, en veillant à ne pas créer de conflits de machines.
+
+\begin{figure}[h]
+\centering
+\begin{ganttchart}[
+    vgrid, hgrid,
+    x unit=1.2cm, y unit chart=0.7cm,
+    bar/.append style={draw=black, line width=1pt}
+]{1}{8}
+\gantttitle{Temps}{8} \\
+\gantttitlelist{1,...,8}{1} \\
+\ganttbar{Machine 1}{1}{1}
+\ganttbar[bar/.style={fill=green!40}]{J3}{1}{2}
+\ganttbar[bar/.style={fill=red!40}]{J2}{3}{3}
+\ganttbar[bar/.style={fill=blue!40}]{J1}{4}{6} \\
+\ganttbar{Machine 2}{1}{1}
+\ganttbar[bar/.style={fill=blue!40}]{J1}{1}{2}
+\ganttbar[bar/.style={fill=green!40}]{J3}{3}{3}
+\ganttbar[bar/.style={fill=red!40}]{J2}{4}{7} \\
+\ganttbar{Machine 3}{1}{1}
+\ganttbar[bar/.style={fill=red!40}]{J2}{1}{2}
+\ganttbar[bar/.style={fill=blue!40}]{J1}{3}{3}
+\ganttbar[bar/.style={fill=green!40}]{J3}{4}{8}
+\end{ganttchart}
+\caption{Diagramme de Gantt - Heuristique EDD ($C_{max} = 8$)}
+\end{figure}
+
+\subsubsection{Heuristique LTR (Longest Total Remaining processing time)}
+\textbf{Principe :} Cette heuristique possède une vision centrée sur les tâches. Elle accorde la priorité absolue aux jobs ayant la plus grande somme de temps de traitement restant à effectuer, peu importe la machine.
+\paragraph{Déroulement :} 
+\begin{itemize}
+    \item À $t=0$, on calcule les temps restants : $P_3=8$, $P_2=7$, $P_1=6$. L'ordre de priorité est donc $J_3 > J_2 > J_1$.
+    \item On assigne les opérations en respectant cet ordre sur les machines disponibles : on place $J_3$ sur $M_3$ (durée 5), puis $J_2$ sur $M_2$ (durée 4), et enfin $J_1$ sur $M_1$ (durée 3).
+    \item On répète le calcul des priorités à chaque fois qu'une machine se libère.
+\end{itemize}
+
+\begin{figure}[h]
+\centering
+\begin{ganttchart}[
+    vgrid, hgrid,
+    x unit=1.2cm, y unit chart=0.7cm,
+    bar/.append style={draw=black, line width=1pt}
+]{1}{8}
+\gantttitle{Temps}{8} \\
+\gantttitlelist{1,...,8}{1} \\
+\ganttbar{Machine 1}{1}{1}
+\ganttbar[bar/.style={fill=blue!40}]{J1}{1}{3}
+\ganttbar[bar/.style={fill=red!40}]{J2}{5}{5}
+\ganttbar[bar/.style={fill=green!40}]{J3}{6}{7} \\
+\ganttbar{Machine 2}{1}{1}
+\ganttbar[bar/.style={fill=red!40}]{J2}{1}{4}
+\ganttbar[bar/.style={fill=blue!40}]{J1}{5}{6}
+\ganttbar[bar/.style={fill=green!40}]{J3}{8}{8} \\
+\ganttbar{Machine 3}{1}{1}
+\ganttbar[bar/.style={fill=green!40}]{J3}{1}{5}
+\ganttbar[bar/.style={fill=red!40}]{J2}{6}{7}
+\ganttbar[bar/.style={fill=blue!40}]{J1}{8}{8}
+\end{ganttchart}
+\caption{Diagramme de Gantt - Heuristique LTR ($C_{max} = 8$)}
+\end{figure}
+
+\subsubsection{Heuristique de Guéret et Prins}
+\textbf{Principe :} Contrairement à LTR, cette heuristique possède une vision croisée. Elle identifie la criticité simultanée des machines et des jobs pour repérer le goulot d'étranglement du système (souvent en maximisant une valeur comme $L_i + P_j$). L'objectif est de saturer immédiatement la machine la plus chargée.
+\paragraph{Déroulement :}
+\begin{itemize}
+    \item On identifie les éléments critiques : la machine la plus chargée est $M_3$ ($L_3=8$) et le job le plus long est $J_3$ ($P_3=8$).
+    \item L'opération la plus critique absolue est donc celle du Job 3 sur la Machine 3. 
+    \item L'algorithme isole et place cette opération ($J_3$ sur $M_3$) dès $t=0$ pour s'assurer que le goulot d'étranglement travaille en continu.
+    \item Les autres opérations sont ensuite placées en parallèle ($J_2$ sur $M_2$, $J_1$ sur $M_1$) de manière à ne pas retarder ce chemin critique. Bien que le cheminement de pensée soit différent, l'ordonnancement résultant pour cette instance spécifique est identique à LTR.
+\end{itemize}
+
+\begin{figure}[h]
+\centering
+\begin{ganttchart}[
+    vgrid, hgrid,
+    x unit=1.2cm, y unit chart=0.7cm,
+    bar/.append style={draw=black, line width=1pt}
+]{1}{8}
+\gantttitle{Temps}{8} \\
+\gantttitlelist{1,...,8}{1} \\
+\ganttbar{Machine 1}{1}{1}
+\ganttbar[bar/.style={fill=blue!40}]{J1}{1}{3}
+\ganttbar[bar/.style={fill=red!40}]{J2}{5}{5}
+\ganttbar[bar/.style={fill=green!40}]{J3}{6}{7} \\
+\ganttbar{Machine 2}{1}{1}
+\ganttbar[bar/.style={fill=red!40}]{J2}{1}{4}
+\ganttbar[bar/.style={fill=blue!40}]{J1}{5}{6}
+\ganttbar[bar/.style={fill=green!40}]{J3}{8}{8} \\
+\ganttbar{Machine 3}{1}{1}
+\ganttbar[bar/.style={fill=green!40}]{J3}{1}{5}
+\ganttbar[bar/.style={fill=red!40}]{J2}{6}{7}
+\ganttbar[bar/.style={fill=blue!40}]{J1}{8}{8}
+\end{ganttchart}
+\caption{Diagramme de Gantt - Heuristique de Guéret et Prins ($C_{max} = 8$)}
+\end{figure}
