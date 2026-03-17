@@ -1,0 +1,34 @@
+\section{Variables de décision pour le problème $O_3||\sum T_j$}
+
+\subsection{Variables de séquence (Ordre des jobs sur une machine)}
+Pour chaque machine $i \in \{1, 2, 3\}$ et pour chaque paire de jobs distincts $(j, k)$ avec $j < k$ :
+\begin{equation}
+    y_{ijk} \in \{0, 1\}
+\end{equation}
+\begin{itemize}
+    \item $y_{ijk} = 1$ si le job $j$ s'exécute avant le job $k$ sur la machine $i$.
+    \item $y_{ijk} = 0$ sinon (le job $k$ s'exécute avant le job $j$ sur la machine $i$).
+\end{itemize}
+
+\subsection{Variables de routage (Ordre des machines pour un job)}
+Pour chaque job $j \in \{1, \dots, n\}$ et pour chaque paire de machines distinctes $(i, h)$ avec $i < h$ :
+\begin{equation}
+    x_{ihj} \in \{0, 1\}
+\end{equation}
+\begin{itemize}
+    \item $x_{ihj} = 1$ si le job $j$ visite la machine $i$ avant la machine $h$.
+    \item $x_{ihj} = 0$ sinon (si le job $j$ visite la machine $h$ avant la machine $i$).
+\end{itemize}
+
+\subsection{Variables de temps et d'évaluation}
+\begin{itemize}
+    \item $C_{ij} \geq 0$ : date de fin du job $j$ sur la machine $i$.
+    \item $C_j \geq 0$ : date de fin globale du job $j$ (moment où le job a terminé son traitement sur toutes les machines).
+    \item $T_j \geq 0$ : tardiveté du job $j$ (retard par rapport à sa date d'échéance $d_j$).
+\end{itemize}
+
+\subsection{Fonction Objectif}
+L'objectif est de minimiser la somme totale des tardivetés :
+\begin{equation}
+    \min \sum_{j=1}^{n} T_j
+\end{equation}

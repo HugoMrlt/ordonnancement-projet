@@ -125,13 +125,21 @@ int main(void) {
     vns(&ltr, &vns_res);
     afficher(&vns_res, "VNS resultat");
 
+    /* Branch and Bound */
+    Sol bb_res;
+
+    printf("--- BRANCH AND BOUND ---\n\n");
+
+    int bb_cost = branch_bound(&vns_res, &bb_res);
+    afficher(&bb_res, "B&B optimal");
+
     /* Recap */
     printf("--- RECAP ---\n");
     printf("  SPT:  sum Tj = %d\n", sum_tj(&spt));
     printf("  EDD:  sum Tj = %d\n", sum_tj(&edd));
     printf("  LTR:  sum Tj = %d\n", sum_tj(&ltr));
     printf("  VNS:  sum Tj = %d\n", sum_tj(&vns_res));
-    printf("  Borne inf:     3\n");
+    printf("  B&B:  sum Tj = %d (optimal)\n", bb_cost);
 
     return 0;
 }
