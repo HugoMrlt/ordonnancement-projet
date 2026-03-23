@@ -4,48 +4,48 @@
 
 /* Etat d'un noeud dans l'arbre B&B */
 typedef struct {
-    int scheduled[NJ][NM];  /* 1 si operation (j,k) planifiee */
-    int machine_avail[NM];  /* date de disponibilite machine */
-    int job_avail[NJ];      /* date de disponibilite job */
-    int start[NJ][NM];      /* dates de debut des operations */
-    int depth;               /* nombre d'operations planifiees */
-} BBNode;
+    int planifie[NJ][NM];   /* 1 si operation (j,k) planifiee */
+    int fin_machine[NM];     /* date de disponibilite machine */
+    int fin_job[NJ];         /* date de disponibilite job */
+    int start[NJ][NM];       /* dates de debut des operations */
+    int profondeur;           /* nombre d'operations planifiees */
+} Noeud;
 
 /* Variables globales B&B */
-static int best_ub;
-static Sol best_sol;
-static int nodes_explored;
-static int nodes_pruned;
+static int meilleur_ub;
+static Sol meilleure_sol;
+static int noeuds_explores;
+static int noeuds_elagues;
 
 /* Borne inferieure : estime le minimum de sum Tj atteignable depuis ce noeud */
-static int compute_lb(BBNode *node) {
+static int calculer_lb(Noeud *noeud) {
     int lb = 0;
 
     for (int j = 0; j < NJ; j++) {
-        int remaining = 0;
-        int all_done = 1;
+        int restant = 0;
+        int tout_fait = 1;
 
         for (int k = 0; k < NM; k++) {
-            if (!node->scheduled[j][k]) {
-                remaining += p[j][k];
-                all_done = 0;
+            if (!noeud->planifie[j][k]) {
+                restant += p[j][k];
+                tout_fait = 0;
             }
         }
 
         int cj_lb;
-        if (all_done) {
-            /* Job termine : completion reelle */
+        if (tout_fait) {
+            /* Job termine : date de fin reelle */
             cj_lb = 0;
             for (int k = 0; k < NM; k++)
-                cj_lb = max2(cj_lb, node->start[j][k] + p[j][k]);
+                cj_lb = max2(cj_lb, noeud->start[j][k] + p[j][k]);
         } else {
             /* Job incomplet : borne = disponibilite + temps restant */
-            cj_lb = node->job_avail[j] + remaining;
+            cj_lb = noeud->fin_job[j] + restant;
 
-            /* Contrainte machine : au moins machine_avail[k] + p[j][k] */
+            /* Contrainte machine : au moins fin_machine[k] + p[j][k] */
             for (int k = 0; k < NM; k++) {
-                if (!node->scheduled[j][k])
-                    cj_lb = max2(cj_lb, node->machine_avail[k] + p[j][k]);
+                if (!noeud->planifie[j][k])
+                    cj_lb = max2(cj_lb, noeud->fin_machine[k] + p[j][k]);
             }
         }
 
@@ -55,18 +55,18 @@ static int compute_lb(BBNode *node) {
     return lb;
 }
 
-/* DFS recursif */
-static void bb_dfs(BBNode *node) {
-    nodes_explored++;
+/* Exploration recursive en profondeur */
+static void explorer(Noeud *noeud) {
+    noeuds_explores++;
 
     /* Cas de base : toutes les operations planifiees */
-    if (node->depth == NJ * NM) {
+    if (noeud->profondeur == NJ * NM) {
         Sol s;
-        memcpy(s.start, node->start, sizeof(s.start));
-        int cost = sum_tj(&s);
-        if (cost < best_ub) {
-            best_ub = cost;
-            memcpy(&best_sol, &s, sizeof(Sol));
+        memcpy(s.start, noeud->start, sizeof(s.start));
+        int cout = sum_tj(&s);
+        if (cout < meilleur_ub) {
+            meilleur_ub = cout;
+            memcpy(&meilleure_sol, &s, sizeof(Sol));
         }
         return;
     }
@@ -74,35 +74,35 @@ static void bb_dfs(BBNode *node) {
     /* Enumerer les operations candidates */
     for (int j = 0; j < NJ; j++) {
         for (int k = 0; k < NM; k++) {
-            if (node->scheduled[j][k])
+            if (noeud->planifie[j][k])
                 continue;
 
             /* Planifier temporairement l'operation (j, k) */
-            int debut = max2(node->machine_avail[k], node->job_avail[j]);
+            int debut = max2(noeud->fin_machine[k], noeud->fin_job[j]);
 
-            int old_ma = node->machine_avail[k];
-            int old_ja = node->job_avail[j];
+            int ancien_fm = noeud->fin_machine[k];
+            int ancien_fj = noeud->fin_job[j];
 
-            node->scheduled[j][k] = 1;
-            node->start[j][k] = debut;
-            node->machine_avail[k] = debut + p[j][k];
-            node->job_avail[j] = debut + p[j][k];
-            node->depth++;
+            noeud->planifie[j][k] = 1;
+            noeud->start[j][k] = debut;
+            noeud->fin_machine[k] = debut + p[j][k];
+            noeud->fin_job[j] = debut + p[j][k];
+            noeud->profondeur++;
 
             /* Evaluer la borne inferieure */
-            int lb = compute_lb(node);
+            int lb = calculer_lb(noeud);
 
-            if (lb < best_ub) {
-                bb_dfs(node);
+            if (lb < meilleur_ub) {
+                explorer(noeud);
             } else {
-                nodes_pruned++;
+                noeuds_elagues++;
             }
 
-            /* Backtrack */
-            node->scheduled[j][k] = 0;
-            node->machine_avail[k] = old_ma;
-            node->job_avail[j] = old_ja;
-            node->depth--;
+            /* Retour arriere */
+            noeud->planifie[j][k] = 0;
+            noeud->fin_machine[k] = ancien_fm;
+            noeud->fin_job[j] = ancien_fj;
+            noeud->profondeur--;
         }
     }
 }
@@ -110,23 +110,23 @@ static void bb_dfs(BBNode *node) {
 /* Point d'entree B&B */
 int branch_bound(Sol *vns_sol, Sol *bb_best) {
     /* Initialiser UB depuis la solution VNS */
-    best_ub = sum_tj(vns_sol);
-    memcpy(&best_sol, vns_sol, sizeof(Sol));
-    nodes_explored = 0;
-    nodes_pruned = 0;
+    meilleur_ub = sum_tj(vns_sol);
+    memcpy(&meilleure_sol, vns_sol, sizeof(Sol));
+    noeuds_explores = 0;
+    noeuds_elagues = 0;
 
     /* Noeud racine : ordonnancement vide */
-    BBNode root;
-    memset(&root, 0, sizeof(BBNode));
+    Noeud racine;
+    memset(&racine, 0, sizeof(Noeud));
 
-    printf("B&B: UB initial = %d (depuis VNS)\n", best_ub);
+    printf("B&B: UB initial = %d (depuis VNS)\n", meilleur_ub);
 
-    bb_dfs(&root);
+    explorer(&racine);
 
-    printf("B&B: optimal = %d\n", best_ub);
+    printf("B&B: optimal = %d\n", meilleur_ub);
     printf("B&B: noeuds explores = %d, noeuds elagues = %d\n\n",
-           nodes_explored, nodes_pruned);
+           noeuds_explores, noeuds_elagues);
 
-    memcpy(bb_best, &best_sol, sizeof(Sol));
-    return best_ub;
+    memcpy(bb_best, &meilleure_sol, sizeof(Sol));
+    return meilleur_ub;
 }
