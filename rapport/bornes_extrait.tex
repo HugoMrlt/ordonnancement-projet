@@ -1,0 +1,66 @@
+\documentclass[a4paper,12pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{amsmath}
+
+\pagestyle{empty}
+
+\begin{document}
+
+\section*{Bornes du Branch and Bound pour $O_3||\sum T_j$}
+
+\subsection*{Variables}
+
+\begin{itemize}
+    \item $p_{jk}$ : durée de l'opération du job $j$ sur la machine $k$.
+    \item $d_j$ : date d'échéance du job $j$.
+    \item $\text{planifie}[j][k] \in \{0, 1\}$ : 1 si l'opération du job $j$ sur la machine $k$ est planifiée, 0 sinon.
+    \item $\text{fin\_machine}[k]$ : date de disponibilité de la machine $k$.
+    \item $\text{fin\_job}[j]$ : date de disponibilité du job $j$.
+    \item $\text{start}[j][k]$ : date de début de l'opération $(j, k)$.
+    \item $R_j = \{k : \text{planifie}[j][k] = 0\}$ : ensemble des machines restantes pour le job $j$.
+\end{itemize}
+
+\subsection*{Borne supérieure (UB)}
+
+On initialise $UB$ avec la tardiveté totale de la meilleure solution heuristique (VNS) :
+\begin{equation}
+    UB = \sum_{j=1}^{n} T_j(S_{\text{VNS}})
+\end{equation}
+
+$UB$ est mise à jour à chaque fois qu'une solution complète avec $\sum T_j < UB$ est trouvée.
+
+\subsection*{Borne inférieure (LB)}
+
+Pour chaque job $j$, on calcule une borne inférieure $LB_j$ sur sa tardiveté.
+
+\textbf{Job terminé} ($R_j = \emptyset$) :
+\begin{equation}
+    C_j = \max_{k} \left( \text{start}[j][k] + p_{jk} \right), \qquad LB_j = \max(0,\; C_j - d_j)
+\end{equation}
+
+\textbf{Job incomplet} ($R_j \neq \emptyset$) :
+\begin{equation}
+    C_j^{lb} = \max\left(
+        \underbrace{\text{fin\_job}[j] + \sum_{k \in R_j} p_{jk}}_{\text{contrainte job}},\;
+        \underbrace{\max_{k \in R_j} \left( \text{fin\_machine}[k] + p_{jk} \right)}_{\text{contrainte machine}}
+    \right)
+\end{equation}
+\begin{equation}
+    LB_j = \max(0,\; C_j^{lb} - d_j)
+\end{equation}
+
+La borne inférieure globale :
+\begin{equation}
+    LB = \sum_{j=1}^{n} LB_j
+\end{equation}
+
+\subsection*{Règle d'élagage}
+
+Si $LB \geq UB$, la branche est coupée.
+
+\end{document}

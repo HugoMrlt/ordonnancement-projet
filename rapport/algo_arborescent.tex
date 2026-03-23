@@ -1,19 +1,19 @@
 \section{Algorithme exact : Séparation et Évaluation (Branch and Bound)}
 
-Pour résoudre de manière exacte le problème d'Open Shop à 3 machines $O_3||\sum T_j$, nous implémentons un algorithme de séparation et évaluation (Branch and Bound). Cet algorithme explore implicitement toutes les combinaisons d'ordonnancement possibles tout en élaguant les branches sous-optimales. L'arbre de recherche possède une profondeur maximale de $3n = 9$ (3 machines $\times$ 3 jobs = 9 opérations).
+Pour résoudre de manière exacte le problème d'Open Shop à 3 machines $O_3||\sum T_j$, nous implémentons un algorithme de séparation et évaluation (Branch and Bound). Cet algorithme explore implicitement toutes les combinaisons d'ordonnancement possibles tout en élaguant les branches sous-optimales. L'arbre de recherche possède une profondeur maximale de $3n$ (3 machines $\times$ $n$ jobs = $3n$ opérations).
 
 \subsection{Représentation d'un n\oe ud}
 
-Chaque n\oe ud de l'arbre représente un ordonnancement partiel. L'état d'un n\oe ud est défini par :
+Chaque n\oe ud de l'arbre représente un ordonnancement partiel. On maintient les informations suivantes :
 \begin{itemize}
-    \item $\text{scheduled}[j][k]$ : 1 si l'opération du job $j$ sur la machine $k$ est planifiée, 0 sinon.
-    \item $\text{machine\_avail}[k]$ : date de disponibilité de la machine $k$ (fin de la dernière opération planifiée sur $k$).
-    \item $\text{job\_avail}[j]$ : date de disponibilité du job $j$ (fin de la dernière opération planifiée pour $j$).
+    \item $\text{planifie}[j][k] \in \{0, 1\}$ : 1 si l'opération du job $j$ sur la machine $k$ est planifiée, 0 sinon.
+    \item $\text{fin\_machine}[k]$ : date de disponibilité de la machine $k$ (fin de la dernière opération planifiée sur $k$).
+    \item $\text{fin\_job}[j]$ : date de disponibilité du job $j$ (fin de la dernière opération planifiée pour $j$).
     \item $\text{start}[j][k]$ : date de début de l'opération $(j, k)$ si elle est planifiée.
-    \item $\text{depth}$ : nombre d'opérations déjà planifiées ($0 \leq \text{depth} \leq 9$).
+    \item $\text{profondeur}$ : nombre d'opérations déjà planifiées ($0 \leq \text{profondeur} \leq 3n$).
 \end{itemize}
 
-Le n\oe ud racine correspond à un ordonnancement vide (depth = 0, toutes les disponibilités à 0).
+Le n\oe ud racine correspond à un ordonnancement vide ($\text{profondeur} = 0$, toutes les disponibilités à 0).
 
 \subsection{Solution initiale et borne supérieure}
 
@@ -23,19 +23,19 @@ Pour initialiser efficacement l'algorithme, on utilise la meilleure solution tro
 \end{equation}
 Toute branche dont la borne inférieure atteint ou dépasse $UB$ est immédiatement élaguée.
 
-\subsection{Stratégie de séparation (branching)}
+\subsection{Stratégie de séparation}
 
 À chaque n\oe ud, les branches enfants correspondent aux choix possibles pour la prochaine opération à ordonnancer. L'ensemble des candidats est constitué de toutes les opérations $O_{jk}$ (job $j$ sur machine $k$) telles que :
 \begin{itemize}
-    \item Le job $j$ n'a pas encore été traité sur la machine $k$ : $\text{scheduled}[j][k] = 0$.
+    \item $\text{planifie}[j][k] = 0$ (l'opération n'a pas encore été planifiée).
 \end{itemize}
 
 Dans un problème d'Open Shop, l'ordre de passage des machines pour un job est libre, ce qui signifie que toute opération non planifiée est candidate. La date de début d'une opération candidate est :
 \begin{equation}
-    \text{start}[j][k] = \max(\text{machine\_avail}[k],\; \text{job\_avail}[j])
+    \text{start}[j][k] = \max(\text{fin\_machine}[k],\; \text{fin\_job}[j])
 \end{equation}
 
-\subsection{Borne inférieure (bounding)}
+\subsection{Borne inférieure (évaluation)}
 
 La borne inférieure $LB$ d'un n\oe ud estime le minimum de $\sum T_j$ atteignable en descendant dans cette branche. Pour chaque job $j$, on calcule une borne inférieure $LB_j$ sur sa tardiveté :
 
@@ -44,11 +44,11 @@ La borne inférieure $LB$ d'un n\oe ud estime le minimum de $\sum T_j$ atteignab
     C_j = \max_{k} \left( \text{start}[j][k] + p_{jk} \right), \qquad LB_j = \max(0,\; C_j - d_j)
 \end{equation}
 
-\textbf{Job incomplet} (il reste des opérations sur l'ensemble $R_j = \{k : \text{scheduled}[j][k] = 0\}$) :
+\textbf{Job incomplet} (il reste des opérations sur l'ensemble $R_j = \{k : \text{planifie}[j][k] = 0\}$) :
 \begin{equation}
     C_j^{lb} = \max\left(
-        \text{job\_avail}[j] + \sum_{k \in R_j} p_{jk},\;
-        \max_{k \in R_j} \left( \text{machine\_avail}[k] + p_{jk} \right)
+        \text{fin\_job}[j] + \sum_{k \in R_j} p_{jk},\;
+        \max_{k \in R_j} \left( \text{fin\_machine}[k] + p_{jk} \right)
     \right)
 \end{equation}
 \begin{equation}
@@ -64,9 +64,9 @@ La borne inférieure globale est alors :
 
 \textbf{Règle d'élagage :} si $LB \geq UB$, la branche est coupée car elle ne peut pas améliorer la meilleure solution connue.
 
-\subsection{Exploration en profondeur (DFS)}
+\subsection{Exploration en profondeur}
 
-L'arbre est parcouru en profondeur d'abord (Depth-First Search), ce qui présente deux avantages :
+L'arbre est parcouru en profondeur d'abord, ce qui présente deux avantages :
 \begin{itemize}
     \item \textbf{Mise à jour rapide de $UB$} : en descendant rapidement vers les feuilles, on découvre tôt des solutions complètes qui resserrent la borne supérieure.
     \item \textbf{Complexité spatiale réduite} : la mémoire nécessaire est proportionnelle à la profondeur de l'arbre ($O(3n)$), ce qui évite la saturation de la mémoire.
@@ -75,26 +75,26 @@ L'arbre est parcouru en profondeur d'abord (Depth-First Search), ce qui présent
 \subsection{Pseudocode}
 
 \begin{algorithm}[H]
-\caption{Branch and Bound --- DFS récursif}
+\caption{Branch and Bound --- exploration récursive}
 \begin{algorithmic}[1]
 \REQUIRE N\oe ud courant $N$, borne supérieure $UB$, meilleure solution $S^*$
-\IF{$N.\text{depth} = 3n$}
+\IF{$\text{profondeur} = 3n$}
     \STATE Calculer $\sum T_j$ de la solution complète
     \IF{$\sum T_j < UB$}
         \STATE $UB \leftarrow \sum T_j$, \quad $S^* \leftarrow$ solution courante
     \ENDIF
     \RETURN
 \ENDIF
-\FORALL{opérations $(j,k)$ telles que $\text{scheduled}[j][k] = 0$}
-    \STATE $\text{start}[j][k] \leftarrow \max(\text{machine\_avail}[k],\; \text{job\_avail}[j])$
-    \STATE Planifier $(j,k)$ : mettre à jour disponibilités et $\text{depth} \leftarrow \text{depth} + 1$
+\FORALL{opérations $(j,k)$ telles que $\text{planifie}[j][k] = 0$}
+    \STATE $\text{start}[j][k] \leftarrow \max(\text{fin\_machine}[k],\; \text{fin\_job}[j])$
+    \STATE Planifier $(j,k)$ : mettre à jour $\text{fin\_machine}[k]$, $\text{fin\_job}[j]$ et $\text{profondeur} \leftarrow \text{profondeur} + 1$
     \STATE Calculer $LB$ du n\oe ud fils
     \IF{$LB < UB$}
         \STATE Appel récursif sur le n\oe ud fils
     \ELSE
         \STATE Élaguer (n\oe ud non exploré)
     \ENDIF
-    \STATE Backtrack : restaurer l'état précédent du n\oe ud
+    \STATE Retour arrière : restaurer l'état précédent du n\oe ud
 \ENDFOR
 \end{algorithmic}
 \end{algorithm}
@@ -105,7 +105,7 @@ L'arbre est parcouru en profondeur d'abord (Depth-First Search), ce qui présent
 
 \subsubsection{Initialisation}
 
-On part de la solution VNS avec $UB = 5$. Le n\oe ud racine est vide (aucune opération planifiée).
+On part de la solution VNS avec $UB = 5$. Le n\oe ud racine est vide ($\text{profondeur} = 0$).
 
 \subsubsection{Exemple d'élagage}
 
@@ -115,13 +115,13 @@ Considérons un n\oe ud partiel après avoir planifié les opérations suivantes
     \item $O_{1,2}$ (Job 1 sur M2) : début 3, fin 5
 \end{itemize}
 
-À ce stade : $\text{job\_avail}[1] = 5$, $\text{machine\_avail}[1] = 3$, $\text{machine\_avail}[2] = 5$.
+À ce stade : $\text{fin\_job}[1] = 5$, $\text{fin\_machine}[1] = 3$, $\text{fin\_machine}[2] = 5$.
 
 Calcul de la borne inférieure :
 \begin{itemize}
     \item Job 1 : reste M3 ($p_{1,3}=1$). $C_1^{lb} = \max(5 + 1, 0 + 1) = 6$. $LB_1 = \max(0, 6-6) = 0$.
     \item Job 2 : reste M1, M2, M3. $C_2^{lb} = \max(0 + 7, \max(3+1, 5+4, 0+2)) = \max(7, 9) = 9$. $LB_2 = \max(0, 9-8) = 1$.
-    \item Job 3 : reste M1, M2, M3. $C_3^{lb} = \max(0 + 8, \max(3+2, 5+1, 0+5)) = \max(8, 5) = 8$. $LB_3 = \max(0, 8-5) = 3$.
+    \item Job 3 : reste M1, M2, M3. $C_3^{lb} = \max(0 + 8, \max(3+2, 5+1, 0+5)) = \max(8, 6) = 8$. $LB_3 = \max(0, 8-5) = 3$.
 \end{itemize}
 
 $LB = 0 + 1 + 3 = 4 < UB = 5$ : ce n\oe ud n'est \textbf{pas} élagué, on continue l'exploration.
@@ -132,7 +132,7 @@ Si par la suite, dans une autre branche, on trouve une solution à $\sum T_j = 3
 
 L'algorithme explore 183 n\oe uds et en élague 623, puis confirme l'optimalité de la solution $\sum T_j = 3$ :
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \begin{ganttchart}[
     vgrid, hgrid,
@@ -141,23 +141,20 @@ L'algorithme explore 183 n\oe uds et en élague 623, puis confirme l'optimalité
 ]{1}{8}
 \gantttitle{Temps}{8} \\
 \gantttitlelist{1,...,8}{1} \\
-\ganttbar{Machine 1}{1}{1}
-\ganttbar[bar/.style={fill=red!40}]{J2}{1}{1}
-\ganttbar[bar/.style={fill=blue!40}]{J1}{3}{5}
-\ganttbar[bar/.style={fill=green!40}]{J3}{6}{7} \\
-\ganttbar{Machine 2}{1}{1}
-\ganttbar[bar/.style={fill=blue!40}]{J1}{1}{2}
-\ganttbar[bar/.style={fill=red!40}]{J2}{3}{6}
-\ganttbar[bar/.style={fill=green!40}]{J3}{8}{8} \\
-\ganttbar{Machine 3}{1}{1}
-\ganttbar[bar/.style={fill=green!40}]{J3}{1}{5}
-\ganttbar[bar/.style={fill=blue!40}]{J1}{6}{6}
-\ganttbar[bar/.style={fill=red!40}]{J2}{7}{8}
+\ganttbar[bar/.style={fill=red!40}]{$M_1$}{1}{1}
+\ganttbar[bar/.style={fill=blue!40}]{}{3}{5}
+\ganttbar[bar/.style={fill=green!40}]{}{6}{7} \\
+\ganttbar[bar/.style={fill=blue!40}]{$M_2$}{1}{2}
+\ganttbar[bar/.style={fill=red!40}]{}{3}{6}
+\ganttbar[bar/.style={fill=green!40}]{}{8}{8} \\
+\ganttbar[bar/.style={fill=green!40}]{$M_3$}{1}{5}
+\ganttbar[bar/.style={fill=blue!40}]{}{6}{6}
+\ganttbar[bar/.style={fill=red!40}]{}{7}{8}
 \end{ganttchart}
 \caption{Solution optimale B\&B --- $\sum T_j = 3$}
 \end{figure}
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \begin{tabular}{lccc}
 \toprule
@@ -175,7 +172,7 @@ Job 3 & 8 & 5 & 3 \\
 
 \subsection{Résultat et comparaison}
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \begin{tabular}{lc}
 \toprule

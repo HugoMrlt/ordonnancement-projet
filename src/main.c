@@ -39,7 +39,8 @@ void afficher(Sol *s, const char *nom) {
         printf("  M%d: ", k + 1);
 
         // Trier les jobs par date de debut sur cette machine
-        int ordre[NJ] = {0, 1, 2};
+        int ordre[NJ];
+        for (int o = 0; o < NJ; o++) ordre[o] = o;
         for (int i = 0; i < NJ - 1; i++)
             for (int j = i + 1; j < NJ; j++)
                 if (s->start[ordre[i]][k] > s->start[ordre[j]][k]) {
@@ -74,7 +75,8 @@ void construire(int *ordre_jobs, Sol *s) {
         int j = ordre_jobs[i];
 
         // Trier les machines par duree croissante pour ce job
-        int mk[NM] = {0, 1, 2};
+        int mk[NM];
+        for (int m = 0; m < NM; m++) mk[m] = m;
         for (int a = 0; a < NM - 1; a++)
             for (int b = a + 1; b < NM; b++)
                 if (p[j][mk[a]] > p[j][mk[b]]) {
