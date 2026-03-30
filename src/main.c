@@ -119,29 +119,39 @@ int main(void) {
     heuristique_ltr(&ltr);
     afficher(&ltr, "LTR");
 
-    /* VNS */
-    Sol vns_res;
+    /* VNS deterministe */
+    Sol vns_det;
 
-    printf("--- VNS (depuis LTR) ---\n\n");
+    printf("--- VNS DETERMINISTE (depuis LTR) ---\n\n");
 
-    vns(&ltr, &vns_res);
-    afficher(&vns_res, "VNS resultat");
+    vns_deterministe(&ltr, &vns_det);
+    afficher(&vns_det, "VNS deterministe");
 
-    /* Branch and Bound */
+    /* VNS stochastique */
+    Sol vns_sto;
+
+    printf("--- VNS STOCHASTIQUE (depuis LTR) ---\n\n");
+
+    vns_stochastique(&ltr, &vns_sto);
+    afficher(&vns_sto, "VNS stochastique");
+
+    /* Branch and Bound (depuis la meilleure VNS) */
+    Sol *meilleure_vns = (sum_tj(&vns_det) <= sum_tj(&vns_sto)) ? &vns_det : &vns_sto;
     Sol bb_res;
 
     printf("--- BRANCH AND BOUND ---\n\n");
 
-    int bb_cost = branch_bound(&vns_res, &bb_res);
+    int bb_cost = branch_bound(meilleure_vns, &bb_res);
     afficher(&bb_res, "B&B optimal");
 
     /* Recap */
     printf("--- RECAP ---\n");
-    printf("  SPT:  sum Tj = %d\n", sum_tj(&spt));
-    printf("  EDD:  sum Tj = %d\n", sum_tj(&edd));
-    printf("  LTR:  sum Tj = %d\n", sum_tj(&ltr));
-    printf("  VNS:  sum Tj = %d\n", sum_tj(&vns_res));
-    printf("  B&B:  sum Tj = %d (optimal)\n", bb_cost);
+    printf("  SPT:      sum Tj = %d\n", sum_tj(&spt));
+    printf("  EDD:      sum Tj = %d\n", sum_tj(&edd));
+    printf("  LTR:      sum Tj = %d\n", sum_tj(&ltr));
+    printf("  VNS-det:  sum Tj = %d\n", sum_tj(&vns_det));
+    printf("  VNS-sto:  sum Tj = %d\n", sum_tj(&vns_sto));
+    printf("  B&B:      sum Tj = %d (optimal)\n", bb_cost);
 
     return 0;
 }

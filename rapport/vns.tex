@@ -1,120 +1,122 @@
 \section{Recherche par Voisinage Variable (VNS)}
 
-La méthode VNS (\textit{Variable Neighborhood Search}) est une métaheuristique qui explore systématiquement plusieurs structures de voisinage pour échapper aux optima locaux. L'idée clé est qu'un optimum local pour un voisinage ne l'est pas nécessairement pour un autre.
+La méthode VNS (\textit{Variable Neighborhood Search}) est une métaheuristique qui explore plusieurs structures de voisinage pour échapper aux optima locaux. L'idée clé : un optimum local pour un voisinage ne l'est pas nécessairement pour un autre.
 
-\subsection{Objectif et solution initiale}
+\subsection{Solution initiale}
 
-L'objectif est de minimiser $\sum T_j$ avec $T_j = \max(0, C_j - D_j)$.
-
-On part de la solution obtenue par l'heuristique LTR, qui donne $\sum T_j = 5$ :
+On part de la solution obtenue par l'heuristique LTR, avec $\sum T_j = 22$ :
 \begin{itemize}
-    \item $C_1 = 8$, $T_1 = \max(0, 8-6) = 2$
-    \item $C_2 = 7$, $T_2 = \max(0, 7-8) = 0$
-    \item $C_3 = 8$, $T_3 = \max(0, 8-5) = 3$
+    \item $C_1 = 19$, $T_1 = 13$ \quad ; \quad $C_2 = 14$, $T_2 = 6$ \quad ; \quad $C_3 = 8$, $T_3 = 3$
 \end{itemize}
 
-\textit{Remarque :} Le Job 3 a un temps total de traitement de 8 et une échéance $D_3=5$, donc $T_3 \geq 3$ est incompressible. La borne inférieure de $\sum T_j$ est donc 3.
+\begin{figure}[H]
+\centering
+\begin{ganttchart}[
+    vgrid, hgrid,
+    x unit=0.6cm, y unit chart=0.7cm,
+    bar/.append style={draw=black, line width=1pt}
+]{1}{19}
+\gantttitle{Temps}{19} \\
+\gantttitlelist{1,...,19}{1} \\
+\ganttbar[bar/.style={fill=green!40}]{$M_1$}{2}{3}
+\ganttbar[bar/.style={fill=red!40}]{}{4}{4}
+\ganttbar[bar/.style={fill=blue!40}]{}{17}{19} \\
+\ganttbar[bar/.style={fill=green!40}]{$M_2$}{1}{1}
+\ganttbar[bar/.style={fill=red!40}]{}{11}{14}
+\ganttbar[bar/.style={fill=blue!40}]{}{15}{16} \\
+\ganttbar[bar/.style={fill=green!40}]{$M_3$}{4}{8}
+\ganttbar[bar/.style={fill=red!40}]{}{9}{10}
+\ganttbar[bar/.style={fill=blue!40}]{}{11}{11}
+\end{ganttchart}
+\caption{Solution initiale LTR --- $\sum T_j = 22$}
+\end{figure}
 
 \subsection{Structures de voisinage}
 
 On définit trois voisinages de taille croissante :
 
 \begin{enumerate}
-    \item[\textbf{$N_1$}] \textbf{Swap intra-machine :} permuter deux opérations consécutives sur une même machine.
-    \item[\textbf{$N_2$}] \textbf{Swap inter-machine :} pour un même job, échanger l'ordre de passage entre deux machines (modifier la séquence d'opérations du job).
-    \item[\textbf{$N_3$}] \textbf{Réinsertion :} déplacer une opération à une autre position sur sa machine.
+    \item[\textbf{$N_1$}] \textbf{Swap intra-machine :} échanger deux jobs consécutifs sur une même machine.
+    \item[\textbf{$N_2$}] \textbf{Swap inter-machine :} pour un même job, modifier sa priorité sur deux machines différentes (avancer sur l'une, reculer sur l'autre).
+    \item[\textbf{$N_3$}] \textbf{Réinsertion :} retirer un job d'une position sur une machine et le réinsérer à une autre position.
 \end{enumerate}
 
-\subsection{Algorithme}
+\textit{Remarque :} $N_1 \subset N_3$ (un swap consécutif est un cas particulier de réinsertion). $N_2$ agit sur deux machines à la fois, contrairement à $N_1$ et $N_3$ qui sont intra-machine.
+
+\subsection{Deux variantes}
+
+Nous implémentons et comparons deux variantes du VNS :
+
+\subsubsection{VNS déterministe (\textit{best improvement})}
 
 \begin{enumerate}
-    \item Choisir une solution initiale $S_0$ (ici, la solution LTR).
-    \item Poser $k = 1$ (indice du voisinage courant).
-    \item \textbf{Perturbation :} générer un voisin $S'$ aléatoire dans $N_k(S)$.
-    \item \textbf{Recherche locale :} améliorer $S'$ par descente dans $N_1$ pour obtenir $S''$.
-    \item \textbf{Mise à jour :} si $\sum T_j(S'') < \sum T_j(S)$, alors $S \leftarrow S''$ et $k \leftarrow 1$. Sinon, $k \leftarrow k+1$.
-    \item Répéter jusqu'à $k > 3$ ou critère d'arrêt atteint.
+    \item Poser $k = 1$.
+    \item Tester \textbf{tous} les voisins dans $N_k$, garder le meilleur.
+    \item Si amélioration : accepter et $k \leftarrow 1$. Sinon : $k \leftarrow k+1$.
+    \item Arrêt quand $k > 3$.
 \end{enumerate}
 
-\subsection{Déroulement détaillé}
+Cette variante est exhaustive : elle garantit de trouver le meilleur voisin dans chaque voisinage. Elle est déterministe (même résultat à chaque exécution).
+
+\subsubsection{VNS stochastique (classique)}
+
+\begin{enumerate}
+    \item Poser $k = 1$.
+    \item \textbf{Perturbation :} générer un voisin aléatoire $S'$ dans $N_k$.
+    \item \textbf{Recherche locale :} améliorer $S'$ par descente dans $N_1$ (tant qu'un swap consécutif améliore, on l'applique) pour obtenir $S''$.
+    \item Si $\sum T_j(S'') < \sum T_j(S)$ : $S \leftarrow S''$, $k \leftarrow 1$. Sinon : $k \leftarrow k+1$.
+    \item Arrêt quand $k > 3$ ou nombre maximal d'itérations atteint.
+\end{enumerate}
+
+Cette variante explore plus largement l'espace de solutions grâce à l'aléatoire, ce qui est avantageux sur les grandes instances.
+
+\subsection{Déroulement}
 
 \textit{Légende des couleurs : \textcolor{blue}{Job 1}, \textcolor{red}{Job 2}, \textcolor{green!70!black}{Job 3}.}
 
-\subsubsection{Solution initiale (LTR) --- $\sum T_j = 5$}
+\subsubsection{VNS déterministe}
+
+\textbf{Itération 1} ($N_1$) : on teste tous les swaps consécutifs sur chaque machine. Le meilleur swap donne $\sum T_j = 11$. Amélioration, $k \leftarrow 1$.
+
+\textbf{Itération 2} ($N_1$) : nouveau swap consécutif améliorant. $\sum T_j = 10$. Amélioration, $k \leftarrow 1$.
+
+\textbf{Itérations 3--5} : $N_1$, $N_2$, $N_3$ testés successivement, aucune amélioration. Arrêt.
+
+Résultat : $\sum T_j = 10$.
+
+\subsubsection{VNS stochastique}
+
+\textbf{Itération 0} : perturbation aléatoire dans $N_1$ + recherche locale par descente. $\sum T_j = 10$. Amélioration, $k \leftarrow 1$.
+
+Itérations suivantes : $N_1$, $N_2$, $N_3$ sans amélioration. Arrêt.
+
+Résultat : $\sum T_j = 10$.
+
+\subsubsection{Solution VNS}
+
+Les deux variantes convergent vers la même solution ($\sum T_j = 10$) :
 
 \begin{figure}[H]
 \centering
 \begin{ganttchart}[
     vgrid, hgrid,
-    x unit=1.2cm, y unit chart=0.7cm,
+    x unit=1.0cm, y unit chart=0.7cm,
     bar/.append style={draw=black, line width=1pt}
-]{1}{8}
-\gantttitle{Temps}{8} \\
-\gantttitlelist{1,...,8}{1} \\
-\ganttbar[bar/.style={fill=blue!40}]{$M_1$}{1}{3}
-\ganttbar[bar/.style={fill=red!40}]{}{5}{5}
-\ganttbar[bar/.style={fill=green!40}]{}{6}{7} \\
-\ganttbar[bar/.style={fill=red!40}]{$M_2$}{1}{4}
-\ganttbar[bar/.style={fill=blue!40}]{}{5}{6}
-\ganttbar[bar/.style={fill=green!40}]{}{8}{8} \\
-\ganttbar[bar/.style={fill=green!40}]{$M_3$}{1}{5}
-\ganttbar[bar/.style={fill=red!40}]{}{6}{7}
-\ganttbar[bar/.style={fill=blue!40}]{}{8}{8}
-\end{ganttchart}
-\caption{Solution initiale LTR --- $\sum T_j = 5$}
-\end{figure}
-
-\subsubsection{Itération 1 --- Voisinage $N_1$ (swap intra-machine)}
-
-On permute $J_2$ et $J_1$ sur $M_1$ (J1 passait avant J2). On obtient : sur $M_1$, on place d'abord $J_2$ (durée 1) puis $J_3$ (durée 2) puis $J_1$ (durée 3). On réordonne aussi $M_2$ et $M_3$ pour respecter les contraintes de non-chevauchement.
-
-Nouvel ordonnancement :
-\begin{itemize}
-    \item $M_1$ : $J_2$ [1], $J_3$ [2--3], $J_1$ [4--6]
-    \item $M_2$ : $J_3$ [1], $J_1$ [2--3], $J_2$ [4--7]
-    \item $M_3$ : $J_1$ [1], $J_2$ [2--3], $J_3$ [4--8]
-\end{itemize}
-
-Calcul : $C_1 = 6$, $T_1 = 0$ ; $C_2 = 7$, $T_2 = 0$ ; $C_3 = 8$, $T_3 = 3$.
-
-$\sum T_j = 3 < 5$ : \textbf{amélioration !} On accepte cette solution et on remet $k = 1$.
-
-\begin{figure}[H]
-\centering
-\begin{ganttchart}[
-    vgrid, hgrid,
-    x unit=1.2cm, y unit chart=0.7cm,
-    bar/.append style={draw=black, line width=1pt}
-]{1}{8}
-\gantttitle{Temps}{8} \\
-\gantttitlelist{1,...,8}{1} \\
-\ganttbar[bar/.style={fill=red!40}]{$M_1$}{1}{1}
-\ganttbar[bar/.style={fill=green!40}]{}{2}{3}
+]{1}{11}
+\gantttitle{Temps}{11} \\
+\gantttitlelist{1,...,11}{1} \\
+\ganttbar[bar/.style={fill=green!40}]{$M_1$}{1}{2}
+\ganttbar[bar/.style={fill=red!40}]{}{3}{3}
 \ganttbar[bar/.style={fill=blue!40}]{}{4}{6} \\
-\ganttbar[bar/.style={fill=green!40}]{$M_2$}{1}{1}
-\ganttbar[bar/.style={fill=blue!40}]{}{2}{3}
-\ganttbar[bar/.style={fill=red!40}]{}{4}{7} \\
-\ganttbar[bar/.style={fill=blue!40}]{$M_3$}{1}{1}
-\ganttbar[bar/.style={fill=red!40}]{}{2}{3}
-\ganttbar[bar/.style={fill=green!40}]{}{4}{8}
+\ganttbar[bar/.style={fill=green!40}]{$M_2$}{3}{3}
+\ganttbar[bar/.style={fill=red!40}]{}{4}{7}
+\ganttbar[bar/.style={fill=blue!40}]{}{8}{9} \\
+\ganttbar[bar/.style={fill=green!40}]{$M_3$}{4}{8}
+\ganttbar[bar/.style={fill=red!40}]{}{9}{10}
+\ganttbar[bar/.style={fill=blue!40}]{}{11}{11}
 \end{ganttchart}
-\caption{Après itération 1 ($N_1$) --- $\sum T_j = 3$}
+\caption{Solution VNS --- $\sum T_j = 10$}
 \end{figure}
-
-\subsubsection{Itérations 2 à 4 --- Exploration des trois voisinages}
-
-À partir de cette solution ($\sum T_j = 3$), on explore successivement :
-\begin{itemize}
-    \item \textbf{$N_1$ :} Les swaps intra-machine testés ne produisent aucune amélioration. $k \leftarrow 2$.
-    \item \textbf{$N_2$ :} Les échanges inter-machine pour chaque job ne réduisent pas $\sum T_j$. $k \leftarrow 3$.
-    \item \textbf{$N_3$ :} Les réinsertions d'opérations ne permettent pas non plus d'améliorer. $k \leftarrow 4 > 3$.
-\end{itemize}
-
-\textbf{Arrêt :} tous les voisinages ont été explorés sans amélioration.
-
-\subsection{Résultat}
-
-La solution finale du VNS est :
 
 \begin{table}[H]
 \centering
@@ -122,14 +124,32 @@ La solution finale du VNS est :
 \toprule
 \textbf{Job} & \textbf{$C_j$} & \textbf{$D_j$} & \textbf{$T_j$} \\
 \midrule
-Job 1 & 6 & 6 & 0 \\
-Job 2 & 7 & 8 & 0 \\
+Job 1 & 11 & 6 & 5 \\
+Job 2 & 10 & 8 & 2 \\
 Job 3 & 8 & 5 & 3 \\
 \midrule
-\multicolumn{3}{l}{\textbf{Total}} & $\mathbf{\sum T_j = 3}$ \\
+\multicolumn{3}{l}{\textbf{Total}} & $\mathbf{\sum T_j = 10}$ \\
 \bottomrule
 \end{tabular}
-\caption{Résultat final du VNS}
+\caption{Résultat VNS}
 \end{table}
 
-Le VNS a amélioré la solution initiale de $\sum T_j = 5$ à $\sum T_j = 3$, atteignant la borne inférieure. Cette solution est donc \textbf{optimale}.
+\subsection{Comparaison des deux variantes}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcc}
+\toprule
+ & \textbf{VNS déterministe} & \textbf{VNS stochastique} \\
+\midrule
+Résultat ($\sum T_j$) & 10 & 10 \\
+Approche & Exhaustive & Aléatoire + recherche locale \\
+Reproductible & Oui & Oui (seed fixe) \\
+Avantage & Garantit le meilleur voisin local & Explore plus largement \\
+Adapté à & Petites instances & Grandes instances \\
+\bottomrule
+\end{tabular}
+\caption{Comparaison des variantes VNS}
+\end{table}
+
+Sur cette instance (3 jobs, 3 machines), les deux variantes donnent le même résultat. Le VNS améliore la solution LTR de $\sum T_j = 22$ à $\sum T_j = 10$, mais n'atteint pas l'optimum ($\sum T_j = 3$, trouvé par le Branch and Bound). Cela illustre la nature approchée des métaheuristiques : le VNS reste piégé dans un optimum local que seule une méthode exacte peut dépasser.
