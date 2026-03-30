@@ -19,7 +19,7 @@ Le n\oe ud racine correspond à un ordonnancement vide ($\text{profondeur} = 0$,
 
 Pour initialiser efficacement l'algorithme, on utilise la meilleure solution trouvée par le VNS comme solution initiale $S_0$. Sa tardiveté totale fournit la borne supérieure initiale :
 \begin{equation}
-    UB = \sum_{j=1}^{n} T_j(S_0) = 5
+    UB = \sum_{j=1}^{n} T_j(S_0) = 10
 \end{equation}
 Toute branche dont la borne inférieure atteint ou dépasse $UB$ est immédiatement élaguée.
 
@@ -105,7 +105,7 @@ L'arbre est parcouru en profondeur d'abord, ce qui présente deux avantages :
 
 \subsubsection{Initialisation}
 
-On part de la solution VNS avec $UB = 5$. Le n\oe ud racine est vide ($\text{profondeur} = 0$).
+On part de la solution VNS avec $UB = 10$. Le n\oe ud racine est vide ($\text{profondeur} = 0$).
 
 \subsubsection{Exemple d'élagage}
 
@@ -124,13 +124,13 @@ Calcul de la borne inférieure :
     \item Job 3 : reste M1, M2, M3. $C_3^{lb} = \max(0 + 8, \max(3+2, 5+1, 0+5)) = \max(8, 6) = 8$. $LB_3 = \max(0, 8-5) = 3$.
 \end{itemize}
 
-$LB = 0 + 1 + 3 = 4 < UB = 5$ : ce n\oe ud n'est \textbf{pas} élagué, on continue l'exploration.
+$LB = 0 + 1 + 3 = 4 < UB = 10$ : ce n\oe ud n'est \textbf{pas} élagué, on continue l'exploration.
 
-Si par la suite, dans une autre branche, on trouve une solution à $\sum T_j = 3$, alors $UB$ est mis à jour à 3. Un n\oe ud avec $LB \geq 3$ sera élagué, réduisant considérablement l'espace de recherche.
+Au fil de l'exploration, $UB$ se resserre. Dès qu'une solution à $\sum T_j = 3$ est trouvée, $UB = 3$. Tout n\oe ud avec $LB \geq 3$ est alors élagué, réduisant considérablement l'espace de recherche.
 
 \subsubsection{Solution optimale trouvée}
 
-L'algorithme explore 183 n\oe uds et en élague 623, puis confirme l'optimalité de la solution $\sum T_j = 3$ :
+L'algorithme explore 379 n\oe uds et en élague 1090, puis confirme l'optimalité de la solution $\sum T_j = 3$ :
 
 \begin{figure}[H]
 \centering
@@ -181,7 +181,8 @@ Job 3 & 8 & 5 & 3 \\
 SPT & 21 \\
 EDD & 24 \\
 LTR & 22 \\
-VNS & 5 \\
+VNS-det & 10 \\
+VNS-sto & 10 \\
 \textbf{B\&B (optimal)} & \textbf{3} \\
 \bottomrule
 \end{tabular}
@@ -190,9 +191,9 @@ VNS & 5 \\
 
 \textbf{Statistiques d'exploration :}
 \begin{itemize}
-    \item N\oe uds explorés : 183
-    \item N\oe uds élagués : 623
-    \item Taux d'élagage : 77\%
+    \item N\oe uds explorés : 379
+    \item N\oe uds élagués : 1090
+    \item Taux d'élagage : 74\%
 \end{itemize}
 
-L'algorithme de séparation et évaluation confirme que $\sum T_j = 3$ est la solution \textbf{optimale}. Le Job 3 contribue inévitablement une tardiveté de 3 (son temps total de traitement est $\sum_k p_{3k} = 8 > d_3 = 5$), tandis que les Jobs 1 et 2 terminent exactement à leur échéance. L'élagage par la borne inférieure permet de ne parcourir que 23\% des n\oe uds générés, démontrant l'efficacité de la borne combinée (contraintes séquentielles job + disponibilités machines).
+L'algorithme de séparation et évaluation confirme que $\sum T_j = 3$ est la solution \textbf{optimale}. Le Job 3 contribue inévitablement une tardiveté de 3 (son temps total de traitement est $\sum_k p_{3k} = 8 > d_3 = 5$), tandis que les Jobs 1 et 2 terminent exactement à leur échéance. L'élagage par la borne inférieure permet de ne parcourir que 26\% des n\oe uds générés, démontrant l'efficacité de la borne combinée (contraintes séquentielles job + disponibilités machines).

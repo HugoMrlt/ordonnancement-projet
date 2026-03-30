@@ -25,7 +25,8 @@ void heuristique_edd(Sol *s);
 void heuristique_ltr(Sol *s);
 
 /* VNS */
-void vns(Sol *init, Sol *best);
+void vns_deterministe(Sol *init, Sol *best);
+void vns_stochastique(Sol *init, Sol *best);
 
 /* Branch and Bound */
 int branch_bound(Sol *vns_sol, Sol *bb_best);
