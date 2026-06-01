@@ -57,12 +57,8 @@ void heuristique_ltr(Sol *s) {
     construire(ordre, s);
 }
 
-/* Gueret et Prins : heuristique a vision croisee (job + machine).
- * A chaque etape, on planifie l'operation non encore placee la plus
- * "critique", c'est-a-dire celle qui maximise la criticite combinee
- * charge_machine_restante + travail_job_restant (L_k + P_j). On sature
- * ainsi en priorite le goulot d'etranglement du systeme. L'operation
- * retenue est placee au plus tot (max des disponibilites job/machine). */
+/* Gueret et Prins : a chaque etape on place l'operation la plus critique
+ * (max de charge_machine_restante + travail_job_restant) au plus tot */
 void heuristique_gueret_prins(Sol *s) {
     int planifie[NJ][NM];
     int fin_machine[NM] = {0};
