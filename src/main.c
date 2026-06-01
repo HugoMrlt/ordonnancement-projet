@@ -106,7 +106,7 @@ int main(void) {
     printf("\n");
 
     /* Heuristiques */
-    Sol spt, edd, ltr;
+    Sol spt, edd, ltr, gp;
 
     printf("--- HEURISTIQUES ---\n\n");
 
@@ -118,6 +118,9 @@ int main(void) {
 
     heuristique_ltr(&ltr);
     afficher(&ltr, "LTR");
+
+    heuristique_gueret_prins(&gp);
+    afficher(&gp, "Gueret-Prins");
 
     /* VNS deterministe */
     Sol vns_det;
@@ -154,13 +157,14 @@ int main(void) {
 
     /* Recap */
     printf("--- RECAP ---\n");
-    printf("  SPT:       sum Tj = %d\n", sum_tj(&spt));
-    printf("  EDD:       sum Tj = %d\n", sum_tj(&edd));
-    printf("  LTR:       sum Tj = %d\n", sum_tj(&ltr));
-    printf("  VNS-det:   sum Tj = %d\n", sum_tj(&vns_det));
-    printf("  VNS-sto:   sum Tj = %d\n", sum_tj(&vns_sto));
-    printf("  B&B:       sum Tj = %d (optimal)\n", bb_cost);
-    printf("  Genetique: sum Tj = %d\n", sum_tj(&gen_res));
+    printf("  SPT:          sum Tj = %d\n", sum_tj(&spt));
+    printf("  EDD:          sum Tj = %d\n", sum_tj(&edd));
+    printf("  LTR:          sum Tj = %d\n", sum_tj(&ltr));
+    printf("  Gueret-Prins: sum Tj = %d\n", sum_tj(&gp));
+    printf("  VNS-det:      sum Tj = %d\n", sum_tj(&vns_det));
+    printf("  VNS-sto:      sum Tj = %d\n", sum_tj(&vns_sto));
+    printf("  B&B:          sum Tj = %d (optimal)\n", bb_cost);
+    printf("  Genetique:    sum Tj = %d\n", sum_tj(&gen_res));
 
     return 0;
 }

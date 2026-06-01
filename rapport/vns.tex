@@ -4,32 +4,7 @@ La méthode VNS (\textit{Variable Neighborhood Search}) est une métaheuristique
 
 \subsection{Solution initiale}
 
-On part de la solution obtenue par l'heuristique LTR, avec $\sum T_j = 22$ :
-\begin{itemize}
-    \item $C_1 = 19$, $T_1 = 13$ \quad ; \quad $C_2 = 14$, $T_2 = 6$ \quad ; \quad $C_3 = 8$, $T_3 = 3$
-\end{itemize}
-
-\begin{figure}[H]
-\centering
-\begin{ganttchart}[
-    vgrid, hgrid,
-    x unit=0.6cm, y unit chart=0.7cm,
-    bar/.append style={draw=black, line width=1pt}
-]{1}{19}
-\gantttitle{Temps}{19} \\
-\gantttitlelist{1,...,19}{1} \\
-\ganttbar[bar/.style={fill=green!40}]{$M_1$}{2}{3}
-\ganttbar[bar/.style={fill=red!40}]{}{4}{4}
-\ganttbar[bar/.style={fill=blue!40}]{}{17}{19} \\
-\ganttbar[bar/.style={fill=green!40}]{$M_2$}{1}{1}
-\ganttbar[bar/.style={fill=red!40}]{}{11}{14}
-\ganttbar[bar/.style={fill=blue!40}]{}{15}{16} \\
-\ganttbar[bar/.style={fill=green!40}]{$M_3$}{4}{8}
-\ganttbar[bar/.style={fill=red!40}]{}{9}{10}
-\ganttbar[bar/.style={fill=blue!40}]{}{11}{11}
-\end{ganttchart}
-\caption{Solution initiale LTR --- $\sum T_j = 22$}
-\end{figure}
+On part de la solution obtenue par l'heuristique LTR, avec $\sum T_j = 22$ ($C_1 = 19$, $T_1 = 13$ ; $C_2 = 14$, $T_2 = 6$ ; $C_3 = 8$, $T_3 = 3$).
 
 \subsection{Structures de voisinage}
 
@@ -70,31 +45,11 @@ Cette variante est exhaustive : elle garantit de trouver le meilleur voisin dans
 
 Cette variante explore plus largement l'espace de solutions grâce à l'aléatoire, ce qui est avantageux sur les grandes instances.
 
-\subsection{Déroulement}
+\subsection{Déroulement et solution}
 
 \textit{Légende des couleurs : \textcolor{blue}{Job 1}, \textcolor{red}{Job 2}, \textcolor{green!70!black}{Job 3}.}
 
-\subsubsection{VNS déterministe}
-
-\textbf{Itération 1} ($N_1$) : on teste tous les swaps consécutifs sur chaque machine. Le meilleur swap donne $\sum T_j = 11$. Amélioration, $k \leftarrow 1$.
-
-\textbf{Itération 2} ($N_1$) : nouveau swap consécutif améliorant. $\sum T_j = 10$. Amélioration, $k \leftarrow 1$.
-
-\textbf{Itérations 3--5} : $N_1$, $N_2$, $N_3$ testés successivement, aucune amélioration. Arrêt.
-
-Résultat : $\sum T_j = 10$.
-
-\subsubsection{VNS stochastique}
-
-\textbf{Itération 0} : perturbation aléatoire dans $N_1$ + recherche locale par descente. $\sum T_j = 10$. Amélioration, $k \leftarrow 1$.
-
-Itérations suivantes : $N_1$, $N_2$, $N_3$ sans amélioration. Arrêt.
-
-Résultat : $\sum T_j = 10$.
-
-\subsubsection{Solution VNS}
-
-Les deux variantes convergent vers la même solution ($\sum T_j = 10$) :
+Partant de LTR ($\sum T_j = 22$), la variante \textbf{déterministe} améliore deux fois de suite dans $N_1$ (passage à 11 puis à 10), puis $N_1$, $N_2$ et $N_3$ ne trouvent plus d'amélioration : arrêt à $\sum T_j = 10$. La variante \textbf{stochastique} atteint $\sum T_j = 10$ dès la première perturbation suivie de recherche locale, puis stagne. Les deux variantes convergent donc vers la même solution :
 
 \begin{figure}[H]
 \centering
@@ -115,24 +70,8 @@ Les deux variantes convergent vers la même solution ($\sum T_j = 10$) :
 \ganttbar[bar/.style={fill=red!40}]{}{9}{10}
 \ganttbar[bar/.style={fill=blue!40}]{}{11}{11}
 \end{ganttchart}
-\caption{Solution VNS --- $\sum T_j = 10$}
+\caption{Solution VNS --- $C_1=11$ ($T_1=5$), $C_2=10$ ($T_2=2$), $C_3=8$ ($T_3=3$) ; $\sum T_j = 10$}
 \end{figure}
-
-\begin{table}[H]
-\centering
-\begin{tabular}{lccc}
-\toprule
-\textbf{Job} & \textbf{$C_j$} & \textbf{$D_j$} & \textbf{$T_j$} \\
-\midrule
-Job 1 & 11 & 6 & 5 \\
-Job 2 & 10 & 8 & 2 \\
-Job 3 & 8 & 5 & 3 \\
-\midrule
-\multicolumn{3}{l}{\textbf{Total}} & $\mathbf{\sum T_j = 10}$ \\
-\bottomrule
-\end{tabular}
-\caption{Résultat VNS}
-\end{table}
 
 \subsection{Comparaison des deux variantes}
 

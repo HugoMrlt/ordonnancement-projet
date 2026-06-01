@@ -1,34 +1,76 @@
-\section{Variables de décision pour le problème $O_3||\sum T_j$}
+\section{Programmation Linéaire en Nombres Entiers (PLNE)}
 
-\subsection{Variables de séquence (Ordre des jobs sur une machine)}
-Pour chaque machine $i \in \{1, 2, 3\}$ et pour chaque paire de jobs distincts $(j, k)$ avec $j < k$ :
+Pour résoudre le problème $O_3 || \sum T_j$ de manière exacte, nous le formulons comme un programme linéaire en nombres entiers (MILP) de type \textbf{disjonctif} : l'ordre des jobs sur chaque machine et l'ordre des machines pour chaque job sont représentés par des variables booléennes, et les conflits sont gérés par la technique du \textit{big-M}. Le modèle est implémenté en OPL et résolu avec CPLEX (fichiers \texttt{OpenShop.mod} / \texttt{OpenShop.dat}).
+
+\subsection{Variables de décision}
+
+\paragraph{Variables de séquence (ordre des jobs sur une machine).} Pour chaque machine $k$ et chaque paire de jobs distincts $(i, j)$ :
 \begin{equation}
-    y_{ijk} \in \{0, 1\}
+    y_{kij} \in \{0, 1\}, \qquad y_{kij} = 1 \text{ si le job } i \text{ précède le job } j \text{ sur la machine } k.
 \end{equation}
+
+\paragraph{Variables de routage (ordre des machines pour un job).} Pour chaque job $j$ et chaque paire de machines distinctes $(k, h)$ :
+\begin{equation}
+    x_{jkh} \in \{0, 1\}, \qquad x_{jkh} = 1 \text{ si le job } j \text{ visite la machine } k \text{ avant la machine } h.
+\end{equation}
+
+\paragraph{Variables de temps.}
 \begin{itemize}
-    \item $y_{ijk} = 1$ si le job $j$ s'exécute avant le job $k$ sur la machine $i$.
-    \item $y_{ijk} = 0$ sinon (le job $k$ s'exécute avant le job $j$ sur la machine $i$).
+    \item $C_{jk} \geq 0$ : date de fin de l'opération du job $j$ sur la machine $k$.
+    \item $C_{j} \geq 0$ : date de fin globale du job $j$ (fin sur toutes les machines).
+    \item $T_{j} \geq 0$ : retard (tardiveté) du job $j$.
 \end{itemize}
 
-\subsection{Variables de routage (Ordre des machines pour un job)}
-Pour chaque job $j \in \{1, \dots, n\}$ et pour chaque paire de machines distinctes $(i, h)$ avec $i < h$ :
-\begin{equation}
-    x_{ihj} \in \{0, 1\}
-\end{equation}
-\begin{itemize}
-    \item $x_{ihj} = 1$ si le job $j$ visite la machine $i$ avant la machine $h$.
-    \item $x_{ihj} = 0$ sinon (si le job $j$ visite la machine $h$ avant la machine $i$).
-\end{itemize}
+\subsection{Fonction objectif}
 
-\subsection{Variables de temps et d'évaluation}
-\begin{itemize}
-    \item $C_{ij} \geq 0$ : date de fin du job $j$ sur la machine $i$.
-    \item $C_j \geq 0$ : date de fin globale du job $j$ (moment où le job a terminé son traitement sur toutes les machines).
-    \item $T_j \geq 0$ : tardiveté du job $j$ (retard par rapport à sa date d'échéance $d_j$).
-\end{itemize}
-
-\subsection{Fonction Objectif}
-L'objectif est de minimiser la somme totale des tardivetés :
+Minimiser la somme totale des retards :
 \begin{equation}
-    \min \sum_{j=1}^{n} T_j
+    \min \sum_{j} T_j
 \end{equation}
+
+\subsection{Contraintes}
+
+\paragraph{(1) Ordre total des jobs sur chaque machine.} Pour toute machine $k$ et tout couple $i \neq j$, l'un des deux jobs précède l'autre :
+\begin{equation}
+    y_{kij} + y_{kji} = 1
+\end{equation}
+
+\paragraph{(2) Ordre total des machines pour chaque job.} Pour tout job $j$ et tout couple de machines $k \neq h$ :
+\begin{equation}
+    x_{jkh} + x_{jhk} = 1
+\end{equation}
+
+\paragraph{(3) Non-chevauchement sur une machine (disjonction).} Deux opérations sur la même machine $k$ ne se recouvrent pas. Si le job $i$ précède le job $j$ ($y_{kji}=0$), alors :
+\begin{equation}
+    C_{ik} \geq C_{jk} + p_{ik} - M\,(1 - y_{kji}) \qquad \forall k,\ \forall i \neq j
+\end{equation}
+La constante $M = 10000$ désactive la contrainte lorsque l'ordre est inverse.
+
+\paragraph{(4) Non-chevauchement des opérations d'un job (disjonction).} Un job n'est traité que sur une machine à la fois. Si le job $j$ passe sur la machine $k$ avant la machine $h$ ($x_{jkh}=1$) :
+\begin{equation}
+    C_{jh} \geq C_{jk} + p_{jh} - M\,(1 - x_{jkh}) \qquad \forall j,\ \forall k \neq h
+\end{equation}
+
+\paragraph{(5) Durée minimale d'une opération.}
+\begin{equation}
+    C_{jk} \geq p_{jk} \qquad \forall j, k
+\end{equation}
+
+\paragraph{(6) Date de fin globale d'un job.}
+\begin{equation}
+    C_{j} \geq C_{jk} \qquad \forall j, k
+\end{equation}
+
+\paragraph{(7) Définition du retard.}
+\begin{equation}
+    T_{j} \geq C_{j} - d_{j} \qquad \forall j
+\end{equation}
+Couplée à $T_j \geq 0$, cette contrainte impose $T_j = \max(0,\ C_j - d_j)$ à l'optimum.
+
+\subsection{Résultat}
+
+Résolu par CPLEX sur l'instance à 3 jobs et 3 machines, le modèle retourne le retard total optimal :
+\begin{equation}
+    \sum_j T_j = 3,
+\end{equation}
+en parfaite cohérence avec le résultat du Branch \& Bound. Le job $J_3$ contribue inévitablement un retard de 3 (sa durée totale $P_3 = 8$ dépasse son échéance $D_3 = 5$), tandis que les jobs $J_1$ et $J_2$ terminent à temps. La PLNE et le Branch \& Bound, deux méthodes exactes, valident donc mutuellement l'optimalité de la solution.

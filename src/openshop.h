@@ -23,6 +23,7 @@ void construire(int *ordre_jobs, Sol *s);
 void heuristique_spt(Sol *s);
 void heuristique_edd(Sol *s);
 void heuristique_ltr(Sol *s);
+void heuristique_gueret_prins(Sol *s);
 
 /* VNS */
 void vns_deterministe(Sol *init, Sol *best);

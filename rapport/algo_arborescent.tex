@@ -103,30 +103,7 @@ L'arbre est parcouru en profondeur d'abord, ce qui présente deux avantages :
 
 \textit{Légende des couleurs : \textcolor{blue}{Job 1}, \textcolor{red}{Job 2}, \textcolor{green!70!black}{Job 3}.}
 
-\subsubsection{Initialisation}
-
-On part de la solution VNS avec $UB = 10$. Le n\oe ud racine est vide ($\text{profondeur} = 0$).
-
-\subsubsection{Exemple d'élagage}
-
-Considérons un n\oe ud partiel après avoir planifié les opérations suivantes :
-\begin{itemize}
-    \item $O_{1,1}$ (Job 1 sur M1) : début 0, fin 3
-    \item $O_{1,2}$ (Job 1 sur M2) : début 3, fin 5
-\end{itemize}
-
-À ce stade : $\text{fin\_job}[1] = 5$, $\text{fin\_machine}[1] = 3$, $\text{fin\_machine}[2] = 5$.
-
-Calcul de la borne inférieure :
-\begin{itemize}
-    \item Job 1 : reste M3 ($p_{1,3}=1$). $C_1^{lb} = \max(5 + 1, 0 + 1) = 6$. $LB_1 = \max(0, 6-6) = 0$.
-    \item Job 2 : reste M1, M2, M3. $C_2^{lb} = \max(0 + 7, \max(3+1, 5+4, 0+2)) = \max(7, 9) = 9$. $LB_2 = \max(0, 9-8) = 1$.
-    \item Job 3 : reste M1, M2, M3. $C_3^{lb} = \max(0 + 8, \max(3+2, 5+1, 0+5)) = \max(8, 6) = 8$. $LB_3 = \max(0, 8-5) = 3$.
-\end{itemize}
-
-$LB = 0 + 1 + 3 = 4 < UB = 10$ : ce n\oe ud n'est \textbf{pas} élagué, on continue l'exploration.
-
-Au fil de l'exploration, $UB$ se resserre. Dès qu'une solution à $\sum T_j = 3$ est trouvée, $UB = 3$. Tout n\oe ud avec $LB \geq 3$ est alors élagué, réduisant considérablement l'espace de recherche.
+On part de la solution VNS avec $UB = 10$ et un n\oe ud racine vide. Au fil de l'exploration, $UB$ se resserre : dès qu'une solution à $\sum T_j = 3$ est trouvée, tout n\oe ud de borne $LB \geq 3$ est élagué, ce qui réduit fortement l'espace de recherche.
 
 \subsubsection{Solution optimale trouvée}
 
@@ -151,49 +128,9 @@ L'algorithme explore 379 n\oe uds et en élague 1090, puis confirme l'optimalit�
 \ganttbar[bar/.style={fill=blue!40}]{}{6}{6}
 \ganttbar[bar/.style={fill=red!40}]{}{7}{8}
 \end{ganttchart}
-\caption{Solution optimale B\&B --- $\sum T_j = 3$}
+\caption{Solution optimale B\&B --- $C_1=6$ ($T_1=0$), $C_2=8$ ($T_2=0$), $C_3=8$ ($T_3=3$) ; $\sum T_j = 3$}
 \end{figure}
 
-\begin{table}[H]
-\centering
-\begin{tabular}{lccc}
-\toprule
-\textbf{Job} & \textbf{$C_j$} & \textbf{$D_j$} & \textbf{$T_j$} \\
-\midrule
-Job 1 & 6 & 6 & 0 \\
-Job 2 & 8 & 8 & 0 \\
-Job 3 & 8 & 5 & 3 \\
-\midrule
-\multicolumn{3}{l}{\textbf{Total}} & $\mathbf{\sum T_j = 3}$ \\
-\bottomrule
-\end{tabular}
-\caption{Résultat du Branch and Bound}
-\end{table}
+\subsection{Résultat}
 
-\subsection{Résultat et comparaison}
-
-\begin{table}[H]
-\centering
-\begin{tabular}{lc}
-\toprule
-\textbf{Méthode} & $\mathbf{\sum T_j}$ \\
-\midrule
-SPT & 21 \\
-EDD & 24 \\
-LTR & 22 \\
-VNS-det & 10 \\
-VNS-sto & 10 \\
-\textbf{B\&B (optimal)} & \textbf{3} \\
-\bottomrule
-\end{tabular}
-\caption{Comparaison des méthodes}
-\end{table}
-
-\textbf{Statistiques d'exploration :}
-\begin{itemize}
-    \item N\oe uds explorés : 379
-    \item N\oe uds élagués : 1090
-    \item Taux d'élagage : 74\%
-\end{itemize}
-
-L'algorithme de séparation et évaluation confirme que $\sum T_j = 3$ est la solution \textbf{optimale}. Le Job 3 contribue inévitablement une tardiveté de 3 (son temps total de traitement est $\sum_k p_{3k} = 8 > d_3 = 5$), tandis que les Jobs 1 et 2 terminent exactement à leur échéance. L'élagage par la borne inférieure permet de ne parcourir que 26\% des n\oe uds générés, démontrant l'efficacité de la borne combinée (contraintes séquentielles job + disponibilités machines).
+\textbf{Statistiques d'exploration :} 379 n\oe uds explorés, 1090 n\oe uds élagués. L'algorithme de séparation et évaluation confirme que $\sum T_j = 3$ est la solution \textbf{optimale} (le tableau comparatif complet de toutes les méthodes figure en fin de section sur l'algorithme génétique). Le Job 3 contribue inévitablement une tardiveté de 3 (son temps total de traitement est $\sum_k p_{3k} = 8 > d_3 = 5$), tandis que les Jobs 1 et 2 terminent exactement à leur échéance. L'élagage par la borne inférieure permet de ne parcourir que 26\% des n\oe uds générés, démontrant l'efficacité de la borne combinée (contraintes séquentielles job + disponibilités machines).

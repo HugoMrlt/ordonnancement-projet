@@ -1,3 +1,4 @@
+#include <string.h>
 #include "openshop.h"
 
 /* Calcule la duree totale d'un job */
@@ -54,4 +55,53 @@ void heuristique_ltr(Sol *s) {
             }
 
     construire(ordre, s);
+}
+
+/* Gueret et Prins : heuristique a vision croisee (job + machine).
+ * A chaque etape, on planifie l'operation non encore placee la plus
+ * "critique", c'est-a-dire celle qui maximise la criticite combinee
+ * charge_machine_restante + travail_job_restant (L_k + P_j). On sature
+ * ainsi en priorite le goulot d'etranglement du systeme. L'operation
+ * retenue est placee au plus tot (max des disponibilites job/machine). */
+void heuristique_gueret_prins(Sol *s) {
+    int planifie[NJ][NM];
+    int fin_machine[NM] = {0};
+    int fin_job[NJ] = {0};
+
+    memset(planifie, 0, sizeof(planifie));
+    memset(s, 0, sizeof(Sol));
+
+    int reste = NJ * NM;
+    while (reste > 0) {
+        /* Travail restant par job et charge restante par machine */
+        int rest_job[NJ] = {0};
+        int rest_machine[NM] = {0};
+        for (int j = 0; j < NJ; j++)
+            for (int k = 0; k < NM; k++)
+                if (!planifie[j][k]) {
+                    rest_job[j] += p[j][k];
+                    rest_machine[k] += p[j][k];
+                }
+
+        /* Choisir l'operation la plus critique : max(L_k + P_j) */
+        int bj = -1, bk = -1, meilleur_score = -1;
+        for (int j = 0; j < NJ; j++)
+            for (int k = 0; k < NM; k++)
+                if (!planifie[j][k]) {
+                    int score = rest_machine[k] + rest_job[j];
+                    if (score > meilleur_score) {
+                        meilleur_score = score;
+                        bj = j;
+                        bk = k;
+                    }
+                }
+
+        /* Placer l'operation au plus tot */
+        int debut = max2(fin_machine[bk], fin_job[bj]);
+        s->start[bj][bk] = debut;
+        fin_machine[bk] = debut + p[bj][bk];
+        fin_job[bj] = debut + p[bj][bk];
+        planifie[bj][bk] = 1;
+        reste--;
+    }
 }
