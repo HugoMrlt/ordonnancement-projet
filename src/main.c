@@ -144,14 +144,23 @@ int main(void) {
     int bb_cost = branch_bound(meilleure_vns, &bb_res);
     afficher(&bb_res, "B&B optimal");
 
+    /* Algo Genetique */
+    Sol gen_res;
+
+    printf("--- ALGO GENETIQUE ---\n\n");
+
+    genetique(&spt, &edd, &ltr, &gen_res);
+    afficher(&gen_res, "Algo Genetique");
+
     /* Recap */
     printf("--- RECAP ---\n");
-    printf("  SPT:      sum Tj = %d\n", sum_tj(&spt));
-    printf("  EDD:      sum Tj = %d\n", sum_tj(&edd));
-    printf("  LTR:      sum Tj = %d\n", sum_tj(&ltr));
-    printf("  VNS-det:  sum Tj = %d\n", sum_tj(&vns_det));
-    printf("  VNS-sto:  sum Tj = %d\n", sum_tj(&vns_sto));
-    printf("  B&B:      sum Tj = %d (optimal)\n", bb_cost);
+    printf("  SPT:       sum Tj = %d\n", sum_tj(&spt));
+    printf("  EDD:       sum Tj = %d\n", sum_tj(&edd));
+    printf("  LTR:       sum Tj = %d\n", sum_tj(&ltr));
+    printf("  VNS-det:   sum Tj = %d\n", sum_tj(&vns_det));
+    printf("  VNS-sto:   sum Tj = %d\n", sum_tj(&vns_sto));
+    printf("  B&B:       sum Tj = %d (optimal)\n", bb_cost);
+    printf("  Genetique: sum Tj = %d\n", sum_tj(&gen_res));
 
     return 0;
 }

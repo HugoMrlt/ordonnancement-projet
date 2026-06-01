@@ -1,0 +1,140 @@
+\section{Algorithme Génétique}
+
+L'algorithme génétique (AG) est une métaheuristique inspirée de l'évolution naturelle. Il maintient une \textbf{population} de solutions candidates (individus) qui évoluent au fil des générations via des opérateurs de \textbf{sélection}, \textbf{croisement} et \textbf{mutation}, dans le but de converger vers une solution de bonne qualité.
+
+\subsection{Représentation d'un individu}
+
+Un individu encode, pour chaque machine $k \in \{1, 2, 3\}$, un ordre de passage des jobs. Soit $\sigma_k$ la permutation des jobs sur la machine $k$ :
+
+\[
+\text{individu} = (\sigma_1,\ \sigma_2,\ \sigma_3)
+\]
+
+Par exemple, $\sigma_1 = (J_3, J_2, J_1)$ signifie que sur $M_1$, $J_3$ passe en premier, puis $J_2$, puis $J_1$.
+
+La \textbf{fitness} d'un individu est le $\sum T_j$ de la solution associée, calculée par un scheduler qui place chaque opération au plus tôt sans chevauchement sur un même job ni sur une même machine.
+
+\subsection{Paramètres}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Paramètre} & \textbf{Valeur} & \textbf{Rôle} \\
+\midrule
+Taille population & 20 & Nombre d'individus maintenus \\
+Nombre de générations & 500 & Critère d'arrêt \\
+Taux de croisement & 0.85 & Probabilité d'appliquer l'OX \\
+Taux de mutation & 0.20 & Probabilité de muter un enfant \\
+Taille du tournoi & 3 & Nombre de candidats en sélection \\
+\bottomrule
+\end{tabular}
+\caption{Paramètres de l'algorithme génétique}
+\end{table}
+
+\subsection{Initialisation de la population}
+
+Les 3 premières places de la population sont occupées par les solutions des heuristiques constructives (SPT, EDD, LTR), converties en individus. Les 17 restants sont générés aléatoirement. Cela permet de démarrer avec une population de qualité tout en conservant de la diversité.
+
+\subsection{Opérateurs génétiques}
+
+\subsubsection{Sélection par tournoi}
+
+Pour choisir un parent, on tire aléatoirement 3 individus dans la population et on retient celui ayant la meilleure fitness (plus petit $\sum T_j$). Cette méthode favorise les bons individus sans éliminer totalement les moins bons, préservant la diversité.
+
+\subsubsection{Croisement OX (\textit{Order Crossover})}
+
+Le croisement OX opère indépendamment sur chaque machine $k$ :
+
+\begin{enumerate}
+    \item Choisir aléatoirement un segment $[i, j]$ dans $\sigma_k^{(1)}$ (parent 1).
+    \item Copier ce segment dans l'enfant aux mêmes positions.
+    \item Compléter les positions restantes dans l'ordre d'apparition dans $\sigma_k^{(2)}$ (parent 2), en sautant les jobs déjà présents.
+\end{enumerate}
+
+Deux enfants sont produits : $E_1$ prend le segment de $P_1$ complété par $P_2$, et $E_2$ l'inverse. Le croisement est appliqué avec probabilité $0.85$ ; sinon les enfants sont des copies des parents.
+
+\textbf{Exemple} sur $M_1$, segment $[1, 2]$ :
+
+\[
+P_1 = (J_1,\ \underline{J_2,\ J_3}) \quad P_2 = (J_3,\ J_1,\ J_2)
+\]
+\[
+E_1 = (J_3,\ \underline{J_2,\ J_3}) \rightarrow (J_1,\ J_2,\ J_3)
+\]
+
+\subsubsection{Mutation par swap}
+
+Avec probabilité $0.20$, on choisit une machine $k$ aléatoire et on échange deux jobs distincts choisis aléatoirement dans $\sigma_k$. La fitness est recalculée après mutation.
+
+\subsection{Remplacement}
+
+Chaque enfant remplace le moins bon individu de la population uniquement s'il est strictement meilleur que lui. Cela garantit que la population ne se dégrade jamais.
+
+\subsection{Déroulement sur l'instance}
+
+\textit{Légende des couleurs : \textcolor{blue}{Job 1}, \textcolor{red}{Job 2}, \textcolor{green!70!black}{Job 3}.}
+
+L'algorithme démarre avec une population dont le meilleur individu a typiquement une fitness entre 3 et 7 selon l'initialisation aléatoire. Il converge vers l'optimum $\sum T_j = 3$ en quelques dizaines de générations.
+
+La solution optimale trouvée :
+
+\begin{figure}[H]
+\centering
+\begin{ganttchart}[
+    vgrid, hgrid,
+    x unit=1.0cm, y unit chart=0.7cm,
+    bar/.append style={draw=black, line width=1pt}
+]{1}{8}
+\gantttitle{Temps}{8} \\
+\gantttitlelist{1,...,8}{1} \\
+\ganttbar[bar/.style={fill=red!40}]{$M_1$}{1}{1}
+\ganttbar[bar/.style={fill=green!40}]{}{2}{3}
+\ganttbar[bar/.style={fill=blue!40}]{}{4}{6} \\
+\ganttbar[bar/.style={fill=blue!40}]{$M_2$}{1}{2}
+\ganttbar[bar/.style={fill=red!40}]{}{3}{6}
+\ganttbar[bar/.style={fill=green!40}]{}{8}{8} \\
+\ganttbar[bar/.style={fill=green!40}]{$M_3$}{1}{5}
+\ganttbar[bar/.style={fill=blue!40}]{}{6}{6}
+\ganttbar[bar/.style={fill=red!40}]{}{7}{8}
+\end{ganttchart}
+\caption{Solution Algorithme Génétique --- $\sum T_j = 3$}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lccc}
+\toprule
+\textbf{Job} & \textbf{$C_j$} & \textbf{$D_j$} & \textbf{$T_j$} \\
+\midrule
+Job 1 & 6 & 6 & 0 \\
+Job 2 & 7 & 8 & 0 \\
+Job 3 & 8 & 5 & 3 \\
+\midrule
+\multicolumn{3}{l}{\textbf{Total}} & $\mathbf{\sum T_j = 3}$ \\
+\bottomrule
+\end{tabular}
+\caption{Résultat Algorithme Génétique}
+\end{table}
+
+\subsection{Comparaison avec les autres méthodes}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Méthode} & \textbf{$\sum T_j$} & \textbf{Type} \\
+\midrule
+SPT & 21 & Heuristique \\
+EDD & 24 & Heuristique \\
+LTR & 22 & Heuristique \\
+VNS déterministe & 10 & Métaheuristique \\
+VNS stochastique & 10 & Métaheuristique \\
+Branch \& Bound & 3 & Méthode exacte \\
+\textbf{Algorithme Génétique} & \textbf{3} & \textbf{Métaheuristique} \\
+\bottomrule
+\end{tabular}
+\caption{Comparaison de toutes les méthodes}
+\end{table}
+
+L'algorithme génétique atteint l'optimum $\sum T_j = 3$, identique au résultat du Branch \& Bound, tout en restant une méthode approchée. Contrairement au VNS qui reste bloqué à $\sum T_j = 10$, l'AG explore plus largement l'espace de solutions grâce à la diversité de sa population et à l'opérateur de croisement OX qui combine des sous-séquences de bons individus. Sur de plus grandes instances où le B\&B devient intractable, l'AG constituerait une alternative pertinente.

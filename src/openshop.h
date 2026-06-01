@@ -31,4 +31,7 @@ void vns_stochastique(Sol *init, Sol *best);
 /* Branch and Bound */
 int branch_bound(Sol *vns_sol, Sol *bb_best);
 
+/* Algo Genetique */
+void genetique(Sol *spt, Sol *edd, Sol *ltr, Sol *best);
+
 #endif
