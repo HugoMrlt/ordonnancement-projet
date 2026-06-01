@@ -4,9 +4,7 @@
 #include <time.h>
 #include "openshop.h"
 
-/* ================================================================
- * PARAMETRES ET TYPE INTERNE
- * ================================================================ */
+/* ---- Parametres et type interne ---- */
 
 #define POP_SIZE     20
 #define NB_GEN       500
@@ -19,9 +17,7 @@ typedef struct {
     int fitness;
 } Individu;
 
-/* ================================================================
- * UTILITAIRES
- * ================================================================ */
+/* ---- Utilitaires ---- */
 
 static double rand_double(void) {
     return (double)rand() / (double)RAND_MAX;
@@ -76,9 +72,7 @@ static void copier_individu(Individu *dst, const Individu *src) {
     memcpy(dst, src, sizeof(Individu));
 }
 
-/* ================================================================
- * INITIALISATION
- * ================================================================ */
+/* ---- Initialisation ---- */
 
 static void permutation_aleatoire(int *tab) {
     for (int i = 0; i < NJ; i++) tab[i] = i;
@@ -118,9 +112,7 @@ static void init_population(Individu *pop, Sol *spt, Sol *edd, Sol *ltr) {
         individu_aleatoire(&pop[i]);
 }
 
-/* ================================================================
- * SELECTION PAR TOURNOI
- * ================================================================ */
+/* ---- Selection par tournoi ---- */
 
 static int selection_tournoi(Individu *pop) {
     int meilleur = rand_int(POP_SIZE);
@@ -132,9 +124,7 @@ static int selection_tournoi(Individu *pop) {
     return meilleur;
 }
 
-/* ================================================================
- * CROISEMENT OX (Order Crossover)
- * ================================================================ */
+/* ---- Croisement OX (order crossover) ---- */
 
 /* OX sur une machine : segment de p1, complement de p2 -> enfant */
 static void ox_une_machine(int *p1, int *p2, int *enfant) {
@@ -181,9 +171,7 @@ static void croisement(Individu *ch1, Individu *ch2,
     }
 }
 
-/* ================================================================
- * MUTATION : swap aleatoire de 2 jobs sur une machine
- * ================================================================ */
+/* ---- Mutation : swap aleatoire de 2 jobs sur une machine ---- */
 
 static void mutation(Individu *ind) {
     if (rand_double() >= TAUX_MUT) return;
@@ -200,9 +188,7 @@ static void mutation(Individu *ind) {
     evaluer(ind);
 }
 
-/* ================================================================
- * REMPLACEMENT : l'enfant remplace le moins bon si meilleur
- * ================================================================ */
+/* ---- Remplacement : l'enfant remplace le moins bon si meilleur ---- */
 
 static void remplacer_moins_bon(Individu *pop, Individu *enfant) {
     int idx_pire = 0;
@@ -213,9 +199,7 @@ static void remplacer_moins_bon(Individu *pop, Individu *enfant) {
         copier_individu(&pop[idx_pire], enfant);
 }
 
-/* ================================================================
- * ALGO GENETIQUE PRINCIPAL
- * ================================================================ */
+/* ---- Algo genetique principal ---- */
 
 void genetique(Sol *spt, Sol *edd, Sol *ltr, Sol *best) {
     srand((unsigned int)time(NULL));
